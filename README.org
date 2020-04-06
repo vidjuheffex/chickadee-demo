@@ -1,0 +1,11 @@
+* Chickadee Demo
+** About
+This repo contains a clone of Flappy Bird built using the [[eww:https://dthompson.us/manuals/chickadee/][Chickadee]] game library for Guile. It is a work in progress as I explore the library.
+
+** Screenshot
+[[./docs/screengrab.gif]]
+** Todo Items
+*** TODO move all movement to scripts
+*** TODO reset-state initial-state pause-state
+*** TODO rotation and additional animation frame on bird.
+
