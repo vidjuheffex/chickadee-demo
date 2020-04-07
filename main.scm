@@ -158,16 +158,22 @@
                (if (<= (rect-x (car (lastt list-of-tube-rects))) (- WINDOW-WIDTH tube-x-distance))
                    (append! list-of-tube-rects `(,(generate-tube-rect-pair))))
 
-               ;; Check for collisions
-               (let loop ([lor list-of-tube-rects])
-                 (if (null? lor)
-                     0
-                     (if (or (rect-intersects? (caar lor) flappy-bird-rect)
-                             (rect-intersects? (cdar lor) flappy-bird-rect)
-                             (rect-intersects? ground-rect flappy-bird-rect))
-                         (set! paused #t)
-                         (loop (cdr lor)))))
+               
                (sleep 1))))))
+
+(define collision-check
+  (script
+   (forever
+    (begin
+      (let loop ([lor list-of-tube-rects])
+        (if (null? lor)
+            0
+            (if (or (rect-intersects? (caar lor) flappy-bird-rect)
+                    (rect-intersects? (cdar lor) flappy-bird-rect)
+                    (rect-intersects? ground-rect flappy-bird-rect))
+                (set! paused #t)
+                (loop (cdr lor)))))
+      (sleep 1)))))
 
 (run-game
  #:load load
