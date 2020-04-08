@@ -73,15 +73,11 @@
 (define (reset-y-pos)
   (set-rect-y! flappy-bird-rect (/ WINDOW-HEIGHT 2.0)))
 
-
 (define (lastt lst)
-  (if (= (length lst) 1)
-      (car lst)
-      (lastt (cdr lst))))
+  (car (last-pair lst)))
 
 ;; Declare Continuations
 (define flap/c #f)
-
 
 (define (load)
   (set! background-sprite (load-image "./assets/sprites/background-day.png"))
@@ -172,7 +168,8 @@
                                (loop (cdr lst))))))))
                
                ;;Generate New Tubes
-               (if (<= (rect-x (car (lastt list-of-tube-rects))) (- WINDOW-WIDTH tube-x-distance))
+               (if (<= (rect-x (car (lastt list-of-tube-rects)))
+                       (- WINDOW-WIDTH tube-x-distance))
                    (append! list-of-tube-rects `(,(generate-tube-rect-pair tube-y-distance))))
 
                
