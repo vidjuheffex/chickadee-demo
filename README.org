@@ -5,7 +5,9 @@ This repo contains a clone of Flappy Bird built using the [[eww:https://dthompso
 ** Screenshot
 [[./docs/screengrab.gif]]
 ** Todo Items
-*** TODO move all movement to scripts
-*** TODO reset-state initial-state pause-state
+*** DONE move all movement to scripts
+*** DONE reset-state initial-state pause-state
 *** TODO rotation and additional animation frame on bird.
-
+*** TODO fix ground scrolling
+*** TODO countdown
+*** TODO scorekeeping
