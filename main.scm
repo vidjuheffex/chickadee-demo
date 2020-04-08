@@ -20,15 +20,21 @@
 (define TUBE-HEIGHT 320)
 (define BIRD-WIDTH 34)
 (define BIRD-HEIGHT 24)
+(define IDENTITY-MATRIX (make-identity-matrix4))
 
 ;; Textures
 (define background-sprite #f)
 (define flappy-bird-sprite #f)
 (define ground-sprite #f)
+(define ground-texture #f)
 (define tube-sprite #f)
 (define flappy-bird-up-flap-tex #f)
 (define flappy-bird-mid-flap-tex #f)
 (define flappy-bird-down-flap-tex)
+
+;; Texture Coodinates
+(define ground-tex-rect (make-rect 0.0 0.0 GROUND-WIDTH GROUND-HEIGHT))
+(define ground-tex-coords (make-rect 0.0 0.0 1.0 1.0))
 
 ;; State
 (define flappy-bird-x #f)
@@ -82,6 +88,7 @@
 (define (load)
   (set! background-sprite (load-image "./assets/sprites/background-day.png"))
   (set! ground-sprite (load-image "./assets/sprites/base.png"))
+  (set! ground-texture (load-image "./assets/sprites/base.png"))
   (set! tube-sprite (load-image "./assets/sprites/pipe-green.png"))
   (set! flappy-bird-up-flap-tex (load-image "./assets/sprites/bluebird-upflap.png"))
   (set! flappy-bird-mid-flap-tex (load-image "./assets/sprites/bluebird-midflap.png"))
@@ -90,7 +97,7 @@
 
 (define (draw alpha)
   (draw-sprite background-sprite #v(0.0 0.0))
-  
+
   ;; Draw tubes so they're behind the ground
   (let loop ([lst list-of-tube-rects])
     (if (null? lst)
@@ -101,9 +108,10 @@
                        #v((rect-x (cdar lst)) (+ TUBE-HEIGHT (rect-y (cdar lst))))
                        #:scale #v(1.0 -1.0))
           (loop (cdr lst)))))
-  
-  (draw-sprite ground-sprite #v(ground-x 0.0))
-  (draw-sprite ground-sprite #v(ground-x-offset 0.0))
+
+  ;;(draw-sprite ground-sprite #v(ground-x 0.0))
+  ;;(draw-sprite ground-sprite #v(ground-x-offset 0.0))
+  (draw-sprite* ground-texture ground-tex-rect IDENTITY-MATRIX #:texcoords ground-tex-coords)
   (draw-sprite flappy-bird-sprite #v((rect-x flappy-bird-rect) (rect-y flappy-bird-rect))))
 
 (define (update elapsed-time)
@@ -133,18 +141,25 @@
             (set-rect-y! flappy-bird-rect y)))
    (set! flappy-bird-sprite flappy-bird-up-flap-tex)))
 
-(define animate-ground
+(define offset-ground-texture
   (script
    (forever
     (begin
-      ;; Tile Ground
-      (if (<= ground-x (- GROUND-WIDTH))
-          (set! ground-x (- WINDOW-WIDTH 10))
-          (set! ground-x (- ground-x ground-velocity)))
-      (if (<= ground-x-offset (- GROUND-WIDTH))
-          (set! ground-x-offset (+ ground-x GROUND-WIDTH))
-          (set! ground-x-offset (- ground-x-offset ground-velocity)))
+      (rect-move-by! ground-tex-coords 10 0.0)
       (sleep 1)))))
+
+#;(define animate-ground
+(script
+(forever
+(begin
+;; Tile Ground
+(if (<= ground-x (- GROUND-WIDTH))
+(set! ground-x (- WINDOW-WIDTH 10))
+(set! ground-x (- ground-x ground-velocity)))
+(if (<= ground-x-offset (- GROUND-WIDTH))
+(set! ground-x-offset (+ ground-x GROUND-WIDTH))
+(set! ground-x-offset (- ground-x-offset ground-velocity)))
+(sleep 1)))))
 
 (define tube-generation
   (at 60
