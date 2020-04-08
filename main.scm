@@ -30,28 +30,49 @@
 (define flappy-bird-mid-flap-tex #f)
 (define flappy-bird-down-flap-tex)
 
-;; Mutables
-(define flappy-bird-x (/ WINDOW-WIDTH 2.0))
-(define flappy-bird-y (/ WINDOW-HEIGHT 2.0))
-(define flappy-bird-drop-velocity 4.0)
-(define flappy-bird-flap-velocity 50.0)
-(define ground-x 0.0)
-(define ground-x-offset GROUND-WIDTH)
-(define ground-velocity 3.0)
-(define tube-x-distance 250.0)
-(define tube-y-distance 100.0)
+;; State
+(define flappy-bird-x #f)
+(define flappy-bird-y #f)
+(define flappy-bird-drop-velocity #f)
+(define flappy-bird-flap-velocity #f)
+(define ground-x #f)
+(define ground-x-offset #f)
+(define ground-velocity #f)
+(define tube-x-distance #f)
+(define tube-y-distance #f)
 (define paused #f)
+(define flappy-bird-rect #f)
+(define ground-rect #f)
+(define list-of-tube-rects '())
+
+(define (generate-tube-rect-pair distance)
+  (let ([offset (random GROUND-HEIGHT)])
+    `(,(make-rect WINDOW-WIDTH (- offset) TUBE-WIDTH TUBE-HEIGHT)
+      .
+      ,(make-rect WINDOW-WIDTH (- (+ TUBE-HEIGHT distance) offset)
+                  TUBE-WIDTH TUBE-HEIGHT))))
+
+;; Initialize State
+(define (init-new-game)
+  (set! flappy-bird-x (/ WINDOW-WIDTH 2.0))
+  (set! flappy-bird-y (/ WINDOW-HEIGHT 2.0))
+  (set! flappy-bird-drop-velocity 4.0)
+  (set! flappy-bird-flap-velocity 50.0)
+  (set! ground-x 0.0)
+  (set! ground-x-offset GROUND-WIDTH)
+  (set! ground-velocity 3.0)
+  (set! tube-x-distance 250.0)
+  (set! tube-y-distance 150.0)
+  (set! paused #f)
+  (set! list-of-tube-rects `(,(generate-tube-rect-pair tube-y-distance)))
+  (set! flappy-bird-rect (make-rect flappy-bird-x flappy-bird-y BIRD-WIDTH BIRD-HEIGHT))
+  (set! ground-rect (make-rect 0 0 GROUND-WIDTH GROUND-HEIGHT)))
+(init-new-game)
 
 ;; Helpers
 (define (reset-y-pos)
   (set-rect-y! flappy-bird-rect (/ WINDOW-HEIGHT 2.0)))
 
-(define (generate-tube-rect-pair)
-  (let ([offset (random GROUND-HEIGHT)])
-    `(,(make-rect WINDOW-WIDTH (- offset) TUBE-WIDTH TUBE-HEIGHT)
-      .
-      ,(make-rect WINDOW-WIDTH (- (+ TUBE-HEIGHT tube-y-distance) offset)
-                  TUBE-WIDTH TUBE-HEIGHT))))
 
 (define (lastt lst)
   (if (= (length lst) 1)
@@ -61,8 +82,6 @@
 ;; Declare Continuations
 (define flap/c #f)
 
-;; Create initial tube set
-(define list-of-tube-rects `(,(generate-tube-rect-pair)))
 
 (define (load)
   (set! background-sprite (load-image "./assets/sprites/background-day.png"))
@@ -72,10 +91,6 @@
   (set! flappy-bird-mid-flap-tex (load-image "./assets/sprites/bluebird-midflap.png"))
   (set! flappy-bird-down-flap-tex (load-image "./assets/sprites/bluebird-downflap.png"))
   (set! flappy-bird-sprite flappy-bird-up-flap-tex))
-
-
-(define flappy-bird-rect (make-rect flappy-bird-x flappy-bird-y BIRD-WIDTH BIRD-HEIGHT))
-(define ground-rect (make-rect 0 0 GROUND-WIDTH GROUND-HEIGHT))
 
 (define (draw alpha)
   (draw-sprite background-sprite #v(0.0 0.0))
@@ -103,7 +118,9 @@
 
 (define (handle-mouse-press button clicks x-pos y-pos)
   (if (eqv? button 'left)
-      (flap/c)))
+      (flap/c))
+  (if (eqv? button 'right)
+      (init-new-game)))
 
 (define gravity 
   (script
@@ -156,7 +173,7 @@
                
                ;;Generate New Tubes
                (if (<= (rect-x (car (lastt list-of-tube-rects))) (- WINDOW-WIDTH tube-x-distance))
-                   (append! list-of-tube-rects `(,(generate-tube-rect-pair))))
+                   (append! list-of-tube-rects `(,(generate-tube-rect-pair tube-y-distance))))
 
                
                (sleep 1))))))
