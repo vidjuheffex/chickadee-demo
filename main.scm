@@ -1,6 +1,7 @@
 (use-modules (chickadee)
              (chickadee scripting)
              (chickadee math)
+             (chickadee audio)
              (chickadee math vector)
              (chickadee math matrix)
              (chickadee math rect)
@@ -35,6 +36,9 @@
 ;; Texture Coodinates
 (define ground-tex-rect (make-rect 0.0 0.0 GROUND-WIDTH GROUND-HEIGHT))
 (define ground-tex-coords (make-rect 0.0 0.0 1.0 1.0))
+
+;; Audio
+(define die-sfx #f)
 
 ;; State
 (define flappy-bird-x #f)
@@ -93,7 +97,8 @@
   (set! flappy-bird-up-flap-tex (load-image "./assets/sprites/bluebird-upflap.png"))
   (set! flappy-bird-mid-flap-tex (load-image "./assets/sprites/bluebird-midflap.png"))
   (set! flappy-bird-down-flap-tex (load-image "./assets/sprites/bluebird-downflap.png"))
-  (set! flappy-bird-sprite flappy-bird-up-flap-tex))
+  (set! flappy-bird-sprite flappy-bird-up-flap-tex)
+  (set! die-sfx (load-audio "./assets/audio/die.ogg")))
 
 (define (draw alpha)
   (draw-sprite background-sprite #v(0.0 0.0))
@@ -200,7 +205,8 @@
             (if (or (rect-intersects? (caar lor) flappy-bird-rect)
                     (rect-intersects? (cdar lor) flappy-bird-rect)
                     (rect-intersects? ground-rect flappy-bird-rect))
-                (set! paused #t)
+                (begin (set! paused #t)
+                       (audio-play die-sfx))
                 (loop (cdr lor)))))
       (sleep 1)))))
 
