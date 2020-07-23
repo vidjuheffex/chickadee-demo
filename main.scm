@@ -39,6 +39,7 @@
 
 ;; Audio
 (define die-sfx #f)
+(define wing-sfx #f)
 
 ;; State
 (define flappy-bird-x #f)
@@ -98,7 +99,14 @@
   (set! flappy-bird-mid-flap-tex (load-image "./assets/sprites/bluebird-midflap.png"))
   (set! flappy-bird-down-flap-tex (load-image "./assets/sprites/bluebird-downflap.png"))
   (set! flappy-bird-sprite flappy-bird-up-flap-tex)
-  (set! die-sfx (load-audio "./assets/audio/die.ogg")))
+  (set! die-sfx (load-audio "./assets/audio/die.ogg"))
+  (set! wing-sfx (load-audio "./assets/audio/wing.ogg"))
+  
+  (spawn-script collision-check)
+  (spawn-script tube-generation)
+  (spawn-script offset-ground-texture)
+  (spawn-script gravity)
+  (spawn-script flap-bird))
 
 (define (draw alpha)
   (draw-sprite background-sprite #v(0.0 0.0))
@@ -114,8 +122,6 @@
                        #:scale #v(1.0 -1.0))
           (loop (cdr lst)))))
 
-  ;;(draw-sprite ground-sprite #v(ground-x 0.0))
-  ;;(draw-sprite ground-sprite #v(ground-x-offset 0.0))
   (draw-sprite* ground-texture ground-tex-rect IDENTITY-MATRIX #:texcoords ground-tex-coords)
   (draw-sprite flappy-bird-sprite #v((rect-x flappy-bird-rect) (rect-y flappy-bird-rect))))
 
@@ -132,83 +138,70 @@
       (init-new-game)))
 
 (define gravity 
-  (script
-   (forever
-    (set-rect-y! flappy-bird-rect (- (rect-y flappy-bird-rect) flappy-bird-drop-velocity))
-    (sleep 1))))
+  (lambda ()
+    (forever
+     (set-rect-y! flappy-bird-rect (- (rect-y flappy-bird-rect) flappy-bird-drop-velocity))
+     (sleep 1))))
 
 (define flap-bird
-  (script
-   (yield (lambda (c) (set! flap/c c)))
-   (set! flappy-bird-sprite flappy-bird-down-flap-tex)
-   (tween 10 (rect-y flappy-bird-rect) (+ flappy-bird-flap-velocity (rect-y flappy-bird-rect))
-          (lambda (y)
-            (set-rect-y! flappy-bird-rect y)))
-   (set! flappy-bird-sprite flappy-bird-up-flap-tex)))
+  (lambda()
+    (yield (lambda (c) (set! flap/c c)))
+    (audio-play wing-sfx)
+    (set! flappy-bird-sprite flappy-bird-down-flap-tex)
+    (tween 10 (rect-y flappy-bird-rect) (+ flappy-bird-flap-velocity (rect-y flappy-bird-rect))
+           (lambda (y)
+             (set-rect-y! flappy-bird-rect y)))
+    (set! flappy-bird-sprite flappy-bird-up-flap-tex)))
 
 (define offset-ground-texture
-  (script
-   (forever
-    (begin
-      (rect-move-by! ground-tex-coords 10 0.0)
-      (sleep 1)))))
-
-#;(define animate-ground
-(script
-(forever
-(begin
-;; Tile Ground
-(if (<= ground-x (- GROUND-WIDTH))
-(set! ground-x (- WINDOW-WIDTH 10))
-(set! ground-x (- ground-x ground-velocity)))
-(if (<= ground-x-offset (- GROUND-WIDTH))
-(set! ground-x-offset (+ ground-x GROUND-WIDTH))
-(set! ground-x-offset (- ground-x-offset ground-velocity)))
-(sleep 1)))))
+  (lambda ()
+    (forever
+     (begin
+       (rect-move-by! ground-tex-coords 10 0.0)
+       (sleep 1)))))
 
 (define tube-generation
-  (at 60
-      (script
-       (forever
-        (begin (let loop ([lst list-of-tube-rects]) 
-                 (if (null? lst)
-                     0
-                     (begin
-                       (let ([tube-pair (car lst)]
-                             [new-value (- (rect-x (caar lst)) ground-velocity)])
-                         (if (<= new-value (- TUBE-WIDTH))
-                             ;; remove offscreen tube from list
-                             (begin 
-                               (set! list-of-tube-rects (cdr lst))
-                               (loop list-of-tube-rects))
-                             ;; move tube over
-                             (begin
-                               (set-rect-x! (car tube-pair) new-value)
-                               (set-rect-x! (cdr tube-pair) new-value)
-                               (loop (cdr lst))))))))
-               
-               ;;Generate New Tubes
-               (if (<= (rect-x (car (lastt list-of-tube-rects)))
-                       (- WINDOW-WIDTH tube-x-distance))
-                   (append! list-of-tube-rects `(,(generate-tube-rect-pair tube-y-distance))))
-
-               
-               (sleep 1))))))
+  (lambda ()
+    (at 60
+        (script
+         (forever
+          (begin (let loop ([lst list-of-tube-rects]) 
+                   (if (null? lst)
+                       0
+                       (begin
+                         (let ([tube-pair (car lst)]
+                               [new-value (- (rect-x (caar lst)) ground-velocity)])
+                           (if (<= new-value (- TUBE-WIDTH))
+                               ;; remove offscreen tube from list
+                               (begin 
+                                 (set! list-of-tube-rects (cdr lst))
+                                 (loop list-of-tube-rects))
+                               ;; move tube over
+                               (begin
+                                 (set-rect-x! (car tube-pair) new-value)
+                                 (set-rect-x! (cdr tube-pair) new-value)
+                                 (loop (cdr lst))))))))
+                 
+                 ;;Generate New Tubes
+                 (if (<= (rect-x (car (lastt list-of-tube-rects)))
+                         (- WINDOW-WIDTH tube-x-distance))
+                     (append! list-of-tube-rects `(,(generate-tube-rect-pair tube-y-distance))))
+                 (sleep 1)))))))
 
 (define collision-check
-  (script
-   (forever
-    (begin
-      (let loop ([lor list-of-tube-rects])
-        (if (null? lor)
-            0
-            (if (or (rect-intersects? (caar lor) flappy-bird-rect)
-                    (rect-intersects? (cdar lor) flappy-bird-rect)
-                    (rect-intersects? ground-rect flappy-bird-rect))
-                (begin (set! paused #t)
-                       (audio-play die-sfx))
-                (loop (cdr lor)))))
-      (sleep 1)))))
+  (lambda ()
+    (forever
+     (begin
+       (let loop ([lor list-of-tube-rects])
+         (if (null? lor)
+             0
+             (if (or (rect-intersects? (caar lor) flappy-bird-rect)
+                     (rect-intersects? (cdar lor) flappy-bird-rect)
+                     (rect-intersects? ground-rect flappy-bird-rect))
+                 (begin (set! paused #t)
+                        (audio-play die-sfx))
+                 (loop (cdr lor)))))
+       (sleep 1)))))
 
 (run-game
  #:load load
@@ -218,4 +211,3 @@
  #:window-width WINDOW-WIDTH
  #:window-height WINDOW-HEIGHT
  #:mouse-press handle-mouse-press)
-
