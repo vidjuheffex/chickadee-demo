@@ -11,3 +11,4 @@ This repo contains a clone of Flappy Bird built using the [[eww:https://dthompso
 *** TODO fix ground scrolling
 *** TODO countdown
 *** TODO scorekeeping
+*** DONE audio fx
