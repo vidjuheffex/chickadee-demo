@@ -5,9 +5,9 @@
              (chickadee math vector)
              (chickadee math matrix)
              (chickadee math rect)
-             (chickadee render font)
-             (chickadee render sprite)
-             (chickadee render texture)
+             (chickadee graphics font)
+             (chickadee graphics sprite)
+             (chickadee graphics texture)
              (system repl coop-server))
 
 (define repl (spawn-coop-repl-server))
